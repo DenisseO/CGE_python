@@ -80,3 +80,173 @@ class Variable: # define indexed variables
                      else:
                       self.i[indexlist[_sage_const_0 ][i],indexlist[_sage_const_1 ][j],indexlist[_sage_const_2 ][k]]=inval
 
+
+class Equation:
+     
+   def __init__(self,descr=None,dim=_sage_const_0 ,indexlist=None,eqstr=None):
+     "Indexed set of equations (each equation is a string, to be evaluated) es. e=Equation(descr,dim,indexlist,eqstr)\n§i,§j,§k replace index elements"  
+     self.description=descr
+     self.dimension=dim
+     self.v={}
+     if dim==_sage_const_0 :
+         self.v[_sage_const_0 ]=eqstr
+     if dim==_sage_const_1 :
+         for i in range(len(indexlist)):
+             self.v[indexlist[i]]=eqstr.replace('§i','"'+indexlist[i]+'"')
+     elif dim==_sage_const_2 :
+         for i in range(len(indexlist[_sage_const_0 ])):
+             for j in range(len(indexlist[_sage_const_1 ])):
+                 self.v[indexlist[_sage_const_0 ][i],indexlist[_sage_const_1 ][j]]=eqstr.replace('§i','"'+indexlist[_sage_const_0 ][i]+'"').replace('§j','"'+indexlist[_sage_const_1 ][j]+'"')
+     elif dim==_sage_const_3 :
+         for i in range(len(indexlist[_sage_const_0 ])):
+             for j in range(len(indexlist[_sage_const_1 ])):   
+                 for k in range(len(indexlist[_sage_const_2 ])):
+                     self.v[indexlist[_sage_const_0 ][i],indexlist[_sage_const_1 ][j],indexlist[_sage_const_2 ][k]]=eqstr.replace('§i','"'+indexlist[_sage_const_0 ][i]+'"').replace('§j','"'+indexlist[_sage_const_1 ][j]+'"').replace('§k','"'+indexlist[_sage_const_2 ][k]+'"')
+
+
+class Parameter: # indexed parameters
+    
+  def __init__(self,descr=None,dim=_sage_const_0 ,indexlist=None,val=_sage_const_0 ):
+     "Indexed parameter es. p=Parameter(descr,dim,indexlist,mat)"
+     self.description=descr
+     self.dimension=dim
+     self.v={}
+     if dim==_sage_const_0 :
+         self.v[_sage_const_0 ]=val
+     if dim==_sage_const_1 :
+         for i in range(len(indexlist)):
+             self.v[indexlist[i]]=val[i]
+     elif dim==_sage_const_2 :
+         for i in range(len(indexlist[_sage_const_0 ])):
+             for j in range(len(indexlist[_sage_const_1 ])):
+                 self.v[indexlist[_sage_const_0 ][i],indexlist[_sage_const_1 ][j]]=val[i,j]
+     elif dim==_sage_const_3 :
+         for i in range(len(indexlist[_sage_const_0 ])):
+             for j in range(len(indexlist[_sage_const_1 ])):   
+                 for k in range(len(indexlist[_sage_const_2 ])):
+                     self.v[indexlist[_sage_const_0 ][i],indexlist[_sage_const_1 ][j],indexlist[_sage_const_2 ][k]]=val[i,j,k]
+
+
+class Model: # define models
+    
+    def __init__(self,eqlist,varlist):
+      "Initialize equations and variables list es. m=Model(eqlist,varlist)\nlists only include names (without .v)"
+      self.elist=[]
+      self.vlist=[]
+      self.initialvalues=[]
+      self.ranges=[]
+      self.solution={}
+      for i in range(len(eqlist)):
+        for j in range(len(eqlist[i].v.values())):
+            self.elist=self.elist+[eval(list(eqlist[i].v.values())[j])]
+      for i in range(len(varlist)):
+          for j in range(len(varlist[i].v.values())):
+              self.vlist=self.vlist+[list(varlist[i].v.values())[j]]
+              self.ranges=self.ranges+[list(varlist[i].b.values())[j]]
+              self.initialvalues=self.initialvalues+[list(varlist[i].i.values())[j]]
+                 
+    def plf(self,v):
+          self.vlist=map(float,v)
+          return self.slf(*v)         
+                    
+    def equations(self):
+        "Show model equations"
+        for i in range(len(self.elist)):
+          print (self.elist[i])
+        
+    def variables(self):
+        "Show model variables"
+        for i in range(len(self.vlist)):
+           print (self.vlist[i])
+    
+    def solve(self):
+        "Solve the model, returning a dictionary (self.solution)"
+        solout=solve(self.elist,self.vlist,solution_dict=True)
+        if len(solout)==_sage_const_0 :
+          print('No solution found! Try nsolve')
+        elif len(solout)==_sage_const_1 :  
+          self.solution=solout[_sage_const_0 ]
+          for i in range(len(solout[_sage_const_0 ].values())):
+            try:
+              print(str(solout[_sage_const_0 ].keys()[i])+' -> '+str(solout[_sage_const_0 ].values()[i].N(digits=_sage_const_10 )))
+            except TypeError:
+              print(str(solout[_sage_const_0 ].keys()[i])+' -> '+str(solout[_sage_const_0 ].values()[i]))
+        else:
+          print('Multiple solutions:')
+          print(solout)
+          
+    def nopt(self):
+         "Numerical optimization (bundled), returning a dictionary (self.solution)"
+         self.sf=_sage_const_0 
+         self.max=False
+         self.cl=[]
+         self.conl=[]
+         for i in range(len(self.elist)):
+          if str(self.elist[i].rhs())=='MIN':
+           self.sf=self.sf+self.elist[i].lhs()
+          elif str(self.elist[i].rhs())=='MAX':
+           self.sf=self.sf-self.elist[i].lhs()
+           self.max=True
+          elif str(self.elist[i]).find(">")>-_sage_const_1 :
+           self.cl.append([True,self.elist[i].lhs()-self.elist[i].rhs()])
+           print (self.cl)
+          elif str(self.elist[i]).find("<")>-_sage_const_1 :
+           self.cl.append([True,-self.elist[i].lhs()+self.elist[i].rhs()])
+          else:
+           self.cl.append([False,self.elist[i].lhs()-self.elist[i].rhs()])
+         def pf(v): 
+           vdict = dict(zip(self.vlist, v)) 
+           return self.sf.subs(vdict)
+         def sos(i, v):
+           vdict = dict(zip(self.vlist, v)) 
+           return self.cl[i][_sage_const_1 ].subs(vdict) 
+         for i in range(len(self.cl)):
+          if self.cl[i][_sage_const_0 ]:
+            ks='ineq'
+          else:
+            ks='eq'
+          self.conl.append({'type':ks,'fun':functools.partial(sos, i)})
+         self.solout=op.minimize(pf,self.initialvalues,bounds=self.ranges,constraints=self.conl,options={'disp':True})
+         if self.max:
+           self.of=-self.solout.fun 
+         else:
+           self.of=self.solout.fun 
+         print('-------------------------------------------------------------------')
+         for i in range(len(self.vlist)):
+           self.solution[self.vlist[i]]=self.solout.x[i]
+           print(str(self.vlist[i])+' = '+str(round(self.solout.x[i])))
+         print('-------------------------------------------------------------------')
+         print('Objective Function:')
+         print(self.of)
+         print('-------------------------------------------------------------------')
+
+    def fix(self,v,val):
+        "Fix the value of the variable v to value val"
+        pos=self.vlist.index(eval(v))
+        self.initialvalues[pos]=val
+        self.ranges[pos]=(val,val)
+        
+    def nsolve(self,method='hybr'):
+         """
+         Numerical solve (root finding), returning a dictionary (self.solution)
+         Available methods: 
+         hybr(def) lm broyden1 broyden2 anderson linearmixing 
+         diagbroyden excitingmixing krylov
+         """ 
+         self.slf=[]
+         for i in range(len(self.elist)):
+            self.slf.append(self.elist[i].lhs()-self.elist[i].rhs())
+         def pf(v):
+          vdict = dict(zip(self.vlist, v))
+          r=[]
+          for i in range(len(self.slf)):
+            a=self.slf[i].subs(vdict)
+            r.append(a)
+          return r 
+         self.solout=op.root(pf,self.initialvalues,jac=False,method=method)
+         print(self.solout)
+         print('-------------------------------------------------------------------')
+         for i in range(len(self.vlist)):
+           self.solution[self.vlist[i]]=self.solout.x[i]
+           print(str(self.vlist[i])+' = '+str(round(self.solout.x[i],_sage_const_2 )))
+         print('-------------------------------------------------------------------')
