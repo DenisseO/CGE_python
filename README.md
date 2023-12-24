@@ -1,2 +1,2 @@
 # CGE_python
- This repositoryis part od a final research document. 
+This code is part of an initial work that aims to analyse the effects of the application of support price policies focused on the agricultural sector as a theoretical complement for policy planners using a Computable General Equilibrium model based on the one proposed by the International Food Policy Research Institute (IFPRI). The Ecuadorian economy was modelled based on data from the Central Bank's 2014 Social Accounting Matrix. 
